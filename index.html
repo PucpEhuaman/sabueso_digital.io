@@ -3,182 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sabueso Digital - Chatbot</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .chat-container {
-            width: 90%;
-            max-width: 1200px;
-            height: 800px;
-            background-color: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-header {
-            padding: 20px;
-            background-color: #1e3a8a;
-            color: white;
-            border-radius: 20px 20px 0 0;
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .message {
-            margin-bottom: 15px;
-            max-width: 90%;
-        }
-
-        .bot-message {
-            background-color: #f0f2f5;
-            padding: 15px;
-            border-radius: 15px;
-            margin-right: auto;
-        }
-
-        .user-message {
-            background-color: #1e3a8a;
-            color: white;
-            padding: 15px;
-            border-radius: 15px;
-            margin-left: auto;
-        }
-
-        .error-message {
-            background-color: #fee2e2;
-            color: #dc2626;
-            padding: 15px;
-            border-radius: 15px;
-            margin-right: auto;
-        }
-
-        .info-card {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 15px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 15px 0;
-        }
-
-        .info-item {
-            padding: 10px;
-            background-color: #f8fafc;
-            border-radius: 8px;
-        }
-
-        .score-section {
-            margin-top: 20px;
-        }
-
-        .score-bar {
-            width: 100%;
-            height: 20px;
-            background: linear-gradient(to right, 
-                #ff0000 0%, 
-                #ff0000 20%, 
-                #ffa500 20%, 
-                #ffa500 40%, 
-                #ffff00 40%, 
-                #ffff00 60%, 
-                #90ee90 60%, 
-                #90ee90 80%, 
-                #008000 80%, 
-                #008000 100%
-            );
-            border-radius: 10px;
-            margin: 10px 0;
-            position: relative;
-        }
-
-        .score-pointer {
-            position: absolute;
-            width: 3px;
-            height: 25px;
-            background-color: #1e3a8a;
-            top: -2px;
-        }
-
-        .chat-input {
-            padding: 20px;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            outline: none;
-        }
-
-        .chat-input button {
-            background-color: #1e3a8a;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-        }
-    </style>
+    <title>Sabueso Digital</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h2>Sabueso Digital</h2>
-            <p>Verificación de documentos</p>
+    <div class="container">
+        <div class="sidebar">
+            <h3>Historial</h3>
+            <div id="history"></div>
         </div>
-        
-        <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message">
-                ¡Hola! Soy el asistente de Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para verificar.
+
+        <div class="main-chat">
+            <div class="chat-header">
+			<h2>
+				<img src="sabueso.png" alt="Logo Sabueso" style="height: 40px; vertical-align: middle; margin-right: 10px;">
+				Sabueso Digital
+			</h2>
+			<p>Asistente Virtual</p>
+		</div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    ¡Hola! Soy el asistente de Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para verificar.
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="Ingresa el número de documento...">
+                <button onclick="handleSubmit()">Enviar</button>
             </div>
         </div>
-        
-        <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Ingresa el número de documento...">
-            <button id="sendButton">Enviar</button>
+
+        <div class="details">
+            <h3>Detalles</h3>
+            <div id="details-content"></div>
         </div>
     </div>
 
     <script>
-        function validarDocumento(doc) {
+        // Variables para gestionar el flujo
+        let currentStep = 'dni'; // Estados: 'dni', 'rubro', 'payment'
+        let selectedDoc = '';
+        let selectedType = '';
+        let selectedCategory = '';
+
+        // Mapeo de categorías
+        const categories = {
+            1: "Alquiler Vivienda",
+            2: "Alquiler de local comercial",
+            3: "Agencia de seguridad",
+            4: "Persona que otorgará servicios",
+            5: "Contrata de Personal",
+            6: "Otros"
+        };
+
+        function addMessage(content, isUser = false) {
+            const messages = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            div.innerHTML = content;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function validateDocument(doc) {
             if (!/^\d+$/.test(doc)) {
-                return { valido: false, mensaje: "El documento debe contener solo números." };
+                return { valid: false, message: "¡El documento debe contener solo números! Por favor, ingresa un número de documento (DNI, RUC o CE) válido." };
             }
-            if (doc.length === 8) return { valido: true, tipo: "DNI" };
-            if (doc.length === 11) return { valido: true, tipo: "RUC" };
-            if (doc.length === 12) return { valido: true, tipo: "CE" };
-            return { valido: false, mensaje: "Longitud inválida. DNI (8 dígitos), RUC (11 dígitos) o CE (12 dígitos)." };
+            if (doc.length === 8) return { valid: true, type: "DNI" };
+            if (doc.length === 11) return { valid: true, type: "RUC" };
+            if (doc.length === 12) return { valid: true, type: "CE" };
+            return { valid: false, message: "¡Longitud de documento inválida! Por favor, ingresa un número de documento (DNI, RUC o CE) válido." };
         }
 
         function getRandomScore() {
@@ -186,103 +81,191 @@
         }
 
         function getRandomName() {
-            const nombres = ["Juan", "María", "Carlos", "Ana", "Pedro", "Luis", "Rosa", "Jorge"];
-            const apellidos = ["García", "López", "Martínez", "Rodríguez", "Sánchez", "Torres"];
+            const nombres = ["Juan", "María", "Carlos", "Ana", "Pedro", "Luis"];
+            const apellidos = ["García", "López", "Martínez", "Rodríguez", "Sánchez"];
             return `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
         }
 
-        function getRandomDate() {
-            const start = new Date(1960, 0, 1);
-            const end = new Date(2000, 11, 31);
-            return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
-                .toLocaleDateString('es-PE');
-        }
-
-        function getScoreCategory(score) {
-            if (score >= 900) return { category: "PERFECTO", description: "Perfil de riesgo excepcional", color: "#008000" };
-            if (score >= 800) return { category: "BUENO", description: "Perfil de riesgo favorable", color: "#90ee90" };
-            if (score >= 600) return { category: "REGULAR", description: "Perfil de riesgo moderado", color: "#ffff00" };
-            if (score >= 400) return { category: "PÉSIMO", description: "Perfil de riesgo alto", color: "#ffa500" };
-            return { category: "MUY PÉSIMO", description: "Perfil de riesgo muy alto", color: "#ff0000" };
-        }
-
-        function addMessage(content, type = 'bot') {
+        function updateHistory(doc, type, category = '') {
+            const history = document.getElementById('history');
             const div = document.createElement('div');
-            div.className = `message ${type}-message`;
-            div.innerHTML = content;
-            document.getElementById('chatMessages').appendChild(div);
-            div.scrollIntoView({ behavior: 'smooth' });
+            div.className = 'history-item';
+            div.innerHTML = `
+                <div>${type}: ${doc}</div>
+                ${category ? `<div>Rubro: ${category}</div>` : ''}
+                <small>Hace un momento</small>
+            `;
+            history.insertBefore(div, history.firstChild);
         }
 
-        function generarRespuesta(documento, tipo) {
+        function updateDetails(doc, type, category) {
+            const details = document.getElementById('details-content');
+            details.innerHTML = `
+                <div class="detail-card">
+                    <h4>Verificaciones</h4>
+                    <div class="verification-badge verified">✓ RENIEC</div>
+                    <div class="verification-badge warning">⚠ SUNAT</div>
+                    <div class="verification-badge verified">✓ Antecedentes</div>
+                </div>
+                <div class="detail-card">
+                    <h4>Actividad Reciente</h4>
+                    <p>Última consulta: ${new Date().toLocaleString()}</p>
+                    <p>Tipo: ${type}</p>
+                    <p>Rubro: ${category}</p>
+                </div>
+            `;
+        }
+
+        function generateResponse(doc, type, category) {
             const score = getRandomScore();
-            const scoreInfo = getScoreCategory(score);
-            
+            let categoryName, color;
+
+            if (score >= 750) {
+                categoryName = "PERFECTO";
+                color = "#008000";
+            } else if (score >= 500) {
+                categoryName = "BUENO";
+                color = "#90ee90";
+            } else if (score >= 250) {
+                categoryName = "MEDIO";
+                color = "#ffa500";
+            } else {
+                categoryName = "PÉSIMO";
+                color = "#ff0000";
+            }
+
             return `
                 <div class="info-card">
-                    <h3>Información Personal</h3>
                     <div class="info-grid">
-                        <div class="info-item">
-                            <small>Nombre</small>
-                            <div><strong>${getRandomName()}</strong></div>
+                        <div>
+                            <small>Nombre:</small>
+                            <strong>${getRandomName()}</strong>
                         </div>
-                        <div class="info-item">
-                            <small>Fecha de Nacimiento</small>
-                            <div><strong>${getRandomDate()}</strong></div>
+                        <div>
+                            <small>${type}:</small>
+                            <strong>${doc}</strong>
                         </div>
-                        <div class="info-item">
-                            <small>${tipo}</small>
-                            <div><strong>${documento}</strong></div>
+                        <div>
+                            <small>Rubro:</small>
+                            <strong>${category}</strong>
                         </div>
                     </div>
 
                     <div class="score-section">
-                        <h3>Score General: ${score}</h3>
-                        <div style="color: ${scoreInfo.color}; font-weight: bold; margin: 5px 0">
-                            ${scoreInfo.category} - ${scoreInfo.description}
+                        <h3>Score General: </h3>
+                        <div class="score-category" style="background-color: ${color}20; color: ${color};">
+                            ${score} - ${categoryName}
                         </div>
                         <div class="score-bar">
                             <div class="score-pointer" style="left: ${(score/1000)*100}%"></div>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 12px;">
                             <span>0</span>
-                            <span>400</span>
-                            <span>600</span>
-                            <span>800</span>
-                            <span>900</span>
+                            <span>250</span>
+                            <span>500</span>
+                            <span>750</span>
                             <span>1000</span>
                         </div>
+                    </div>
+
+                    <!-- Enlace para descargar el informe PDF -->
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="GetInformePdf.pdf" target="_blank" style="
+                            display: inline-block;
+                            padding: 10px 20px;
+                            background-color: #007BFF;
+                            color: #fff;
+                            text-decoration: none;
+                            border-radius: 5px;
+                            font-weight: bold;
+                        ">
+                            📥 Descargar Informe Completo
+                        </a>
+                        <p style="margin-top: 10px; font-size: 14px; color: #555;">
+                            Haz clic en el botón para abrir el informe detallado de tu búsqueda.
+                        </p>
                     </div>
                 </div>
             `;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const input = document.getElementById('userInput');
-            const button = document.getElementById('sendButton');
+        function requestPayment() {
+            return new Promise((resolve) => {
+                // Mostrar el código QR para el pago
+                const messages = document.getElementById('chat-messages');
+                const paymentDiv = document.createElement('div');
+                paymentDiv.className = 'message bot-message';
+                paymentDiv.innerHTML = `
+                    Por favor, realiza el pago escaneando el siguiente código QR para continuar.<br>
+                    <img src="QR.png" alt="Código QR" class="qr-image" style="display: block; margin: 10px auto;">
+                `;
+                messages.appendChild(paymentDiv);
+                messages.scrollTop = messages.scrollHeight;
 
-            function handleSubmit() {
-                const documento = input.value.trim();
-                if (!documento) return;
-
-                addMessage(documento, 'user');
-                const validacion = validarDocumento(documento);
-
+                // Simular una espera para la confirmación del pago (por ejemplo, 5 segundos)
                 setTimeout(() => {
-                    if (validacion.valido) {
-                        addMessage(generarRespuesta(documento, validacion.tipo));
-                    } else {
-                        addMessage(validacion.mensaje, 'error');
-                    }
-                }, 500);
-
-                input.value = '';
-            }
-
-            button.addEventListener('click', handleSubmit);
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') handleSubmit();
+                    resolve();
+                }, 5000);
             });
+        }
+
+        async function handleSubmit() {
+            const input = document.getElementById('user-input');
+            const userInput = input.value.trim();
+
+            if (!userInput) return;
+
+            addMessage(userInput, true);
+            input.value = '';
+
+            if (currentStep === 'dni') {
+                const validation = validateDocument(userInput);
+
+                if (validation.valid) {
+                    selectedDoc = userInput;
+                    selectedType = validation.type;
+                    currentStep = 'rubro';
+                    setTimeout(() => {
+                        addMessage(`
+                            ¿Para qué rubro va dirigida la búsqueda? Por favor responde con el número correspondiente:<br>
+                            1. Alquiler Vivienda<br>
+                            2. Alquiler de local comercial<br>
+                            3. Agencia de seguridad<br>
+                            4. Persona que otorgará servicios<br>
+                            5. Contrata de Personal<br>
+                            6. Otros.
+                        `);
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        addMessage(validation.message);
+                    }, 500);
+                }
+            } else if (currentStep === 'rubro') {
+                const categoryNum = parseInt(userInput, 10);
+                if (categoryNum >= 1 && categoryNum <= 6) {
+                    selectedCategory = categories[categoryNum];
+                    currentStep = 'payment';
+                    addMessage(`<span style="color: green; font-weight: bold;">Rubro seleccionado: ${selectedCategory}</span>`);
+                    await requestPayment();
+                    addMessage('<span style="color: green; font-weight: bold;">Gracias por tu pago, continuaremos con la búsqueda...</span>');
+                    // Simular una espera antes de mostrar la respuesta
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    addMessage(generateResponse(selectedDoc, selectedType, selectedCategory));
+                    updateHistory(selectedDoc, selectedType, selectedCategory);
+                    updateDetails(selectedDoc, selectedType, selectedCategory);
+                    currentStep = 'dni'; // Reiniciar el flujo para futuras consultas
+                } else {
+                    setTimeout(() => {
+                        addMessage("Por favor, ingresa un número válido entre 1 y 6 para seleccionar el rubro.");
+                    }, 500);
+                }
+            }
+        }
+
+        // Agregar evento Enter al input
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSubmit();
         });
     </script>
 </body>

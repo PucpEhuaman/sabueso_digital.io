@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabueso Digital</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar {
+            padding: 20px;
+            border-right: 1px solid #eee;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .main-chat {
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #1e3a8a;
+            color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: scroll;
+            background: #f8fafc;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 85%;
+        }
+
+        .bot-message {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-right: auto;
+        }
+
+        .user-message {
+            background: #1e3a8a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+
+        .chat-input {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+
+        .info-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .score-section {
+            margin-top: 15px;
+        }
+
+        .score-category {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .score-bar {
+            height: 20px;
+            background: linear-gradient(to right,
+                #ff0000 0%,
+                #ff0000 20%,
+                #ffa500 20%,
+                #ffa500 40%,
+                #ffff00 40%,
+                #ffff00 60%,
+                #90ee90 60%,
+                #90ee90 80%,
+                #008000 80%,
+                #008000 100%
+            );
+            border-radius: 10px;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .score-pointer {
+            position: absolute;
+            width: 3px;
+            height: 25px;
+            background: #1e3a8a;
+            top: -2px;
+        }
+
+        .details {
+            padding: 20px;
+            border-left: 1px solid #eee;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .verification-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .verified {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3>Historial</h3>
+            <div id="history"></div>
+        </div>
+
+        <div class="main-chat">
+            <div class="chat-header">
+                <h2>Sabueso Digital</h2>
+                <p>Asistente Virtual</p>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    ¡Hola! Soy el asistente de Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para verificar.
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="Ingresa el número de documento...">
+                <button onclick="handleSubmit()">Enviar</button>
+            </div>
+        </div>
+
+        <div class="details">
+            <h3>Detalles</h3>
+            <div id="details-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function addMessage(content, isUser = false) {
+            const messages = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            div.innerHTML = content;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function validateDocument(doc) {
+            if (!/^\d+$/.test(doc)) {
+                return { valid: false, message: "¡Hola! Soy el asistente de Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para verificar." };
+            }
+            if (doc.length === 8) return { valid: true, type: "DNI" };
+            if (doc.length === 11) return { valid: true, type: "RUC" };
+            if (doc.length === 12) return { valid: true, type: "CE" };
+            return { valid: false, message: "¡Hola! Soy el asistente de Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para verificar." };
+        }
+
+        function getRandomScore() {
+            return Math.floor(Math.random() * 1001);
+        }
+
+        function getRandomName() {
+            const nombres = ["Juan", "María", "Carlos", "Ana", "Pedro", "Luis"];
+            const apellidos = ["García", "López", "Martínez", "Rodríguez", "Sánchez"];
+            return `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
+        }
+
+        function updateHistory(doc, type) {
+            const history = document.getElementById('history');
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <div>${type}: ${doc}</div>
+                <small>Hace un momento</small>
+            `;
+            history.insertBefore(div, history.firstChild);
+        }
+
+        function updateDetails(doc, type) {
+            const details = document.getElementById('details-content');
+            details.innerHTML = `
+                <div class="detail-card">
+                    <h4>Verificaciones</h4>
+                    <div class="verification-badge verified">✓ RENIEC</div>
+                    <div class="verification-badge warning">⚠ SUNAT</div>
+                    <div class="verification-badge verified">✓ Antecedentes</div>
+                </div>
+                <div class="detail-card">
+                    <h4>Actividad Reciente</h4>
+                    <p>Última consulta: ${new Date().toLocaleString()}</p>
+                    <p>Tipo: ${type}</p>
+                </div>
+            `;
+        }
+
+        function generateResponse(doc, type) {
+            const score = getRandomScore();
+            let category, color;
+            
+            if (score >= 900) {
+                category = "PERFECTO";
+                color = "#008000";
+            } else if (score >= 800) {
+                category = "BUENO";
+                color = "#90ee90";
+            } else if (score >= 600) {
+                category = "REGULAR";
+                color = "#ffff00";
+            } else if (score >= 400) {
+                category = "PÉSIMO";
+                color = "#ffa500";
+            } else {
+                category = "MUY PÉSIMO";
+                color = "#ff0000";
+            }
+
+            return `
+                <div class="info-card">
+                    <div class="info-grid">
+                        <div>
+                            <small>Nombre:</small>
+                            <strong>${getRandomName()}</strong>
+                        </div>
+                        <div>
+                            <small>${type}:</small>
+                            <strong>${doc}</strong>
+                        </div>
+                    </div>
+
+                    <div class="score-section">
+                        <h3>Score General: ${score}</h3>
+                        <div class="score-category" style="background-color: ${color}20; color: ${color};">
+                            ${category} - Perfil de riesgo ${category.toLowerCase()}
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-pointer" style="left: ${(score/1000)*100}%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                            <span>0</span>
+                            <span>400</span>
+                            <span>600</span>
+                            <span>800</span>
+                            <span>900</span>
+                            <span>1000</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleSubmit() {
+            const input = document.getElementById('user-input');
+            const doc = input.value.trim();
+            
+            if (!doc) return;
+
+            addMessage(doc, true);
+            const validation = validateDocument(doc);
+
+            if (validation.valid) {
+                setTimeout(() => {
+                    addMessage(generateResponse(doc, validation.type));
+                    updateHistory(doc, validation.type);
+                    updateDetails(doc, validation.type);
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    addMessage(validation.message);
+                }, 500);
+            }
+
+            input.value = '';
+        }
+
+        // Agregar evento Enter al input
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSubmit();
+        });
+    </script>
+</body>
+</html>
