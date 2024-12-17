@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabueso Digital</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3>Historial</h3>
+            <div id="history"></div>
+        </div>
+
+        <div class="main-chat">
+				
+            <div class="chat-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h2>
+                            <img src="sabueso.png" alt="Logo Sabueso" style="height: 40px; vertical-align: middle; margin-right: 10px;">
+                            <span id="title_app">Sabueso Digital</span>
+                        </h2>
+                        <div class="user-info">
+                            <span id="user-email" class="user-email"></span>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <p id="coin-counter"><span class="verification-badge coin">💰</span>Coins pendientes: <strong id="coins">45</strong></p>
+                        <button class="logout-button" onclick="handleLogout()">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message" id="welcome-message">
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="Ingresa el número de documento...">
+                <button onclick="handleSubmit()">Enviar</button>
+                <input type="file" id="doc-upload" accept=".pdf" style="display: none;" onchange="handleFileUpload(event)">
+            </div>
+        </div>
+
+        <div class="details">
+            <h3>Detalles</h3>
+            <div id="details-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables para gestionar el flujo
+        let currentStep = 'dni'; // Estados: 'dni', 'rubro', 'consent', 'upload', 'payment'
+        let selectedDoc = '';
+        let selectedType = '';
+        let selectedCategory = '';
+        let documentUploaded = false;
+        let coins = 50;
+        function checkSession() {
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+            
+            if (!userEmail || !userName) {
+                // Si no hay sesión activa, redirigir al login
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Actualizar la interfaz con la información del usuario
+            document.getElementById('user-name').textContent = userName;
+            document.getElementById('user-email').textContent = userEmail;
+            document.getElementById('welcome-message').innerHTML = `¡Hola ${userName}! Soy el Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para procesar.`;
+        }
+
+        // Función para cerrar sesión
+        function handleLogout() {
+            // Mostrar confirmación
+            if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                // Limpiar localStorage
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userName');
+                // Redirigir al login
+                window.location.href = 'index.html';
+            }
+        }
+		
+        const coins_init = document.getElementById('coins');
+        coins_init.innerHTML = `${coins}`;
+        
+        // Mapeo de categorías
+        const categories = {
+            1: "Alquiler Propiedad",
+            2: "Busqueda Personal",
+            3: "Busqueda Cuidador(a)",
+        };
+
+        const userName = "Juan Pérez";
+        
+        const title = document.getElementById('title_app');
+        title.innerHTML = `Sabueso Digital de ${userName}`;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const welcomeMessage = document.getElementById('welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.innerHTML = `¡Hola ${userName}! Soy el Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para procesar.`;
+            }
+        });
+		window.onload = checkSession;
+        function addMessage(content, isUser = false) {
+            const messages = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            div.innerHTML = content;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.type === 'application/pdf') {
+                    documentUploaded = true;
+                    addMessage(`<span style="color: green; font-weight: bold;">✓ Documento cargado exitosamente: ${file.name}</span>`);
+                    
+                    // Mostrar mensaje de procesamiento
+                    setTimeout(() => {
+                        addMessage('<div class="processing-message" style="text-align: center; padding: 20px;">'+
+                            '<div style="margin-bottom: 10px;">🔄 Procesando documento y generando evaluación...</div>'+
+                            '<div class="loading-bar" style="width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px;">'+
+                                '<div style="width: 30%; height: 100%; background: #4CAF50; border-radius: 2px; animation: loading 1.5s infinite;"></div>'+
+                            '</div>'+
+                        '</div>');
+                        
+                        // Procesar el pago y mostrar el score
+                        if (deductCoins()) {
+                            setTimeout(() => {
+                                // Generar y mostrar el score
+                                const scoreResponse = generateResponse(selectedDoc, selectedType, selectedCategory);
+                                addMessage('<div style="color: green; font-weight: bold; margin-bottom: 10px;">✅ Evaluación completada</div>');
+                                addMessage(scoreResponse);
+                                
+                                // Actualizar historial y detalles
+                                updateHistory(selectedDoc, selectedType, selectedCategory);
+                                updateDetails(selectedDoc, selectedType, selectedCategory);
+                                
+                                // Reiniciar variables para nueva evaluación
+                                currentStep = 'dni';
+                                selectedDoc = '';
+                                selectedType = '';
+                                selectedCategory = '';
+                                documentUploaded = false;
+                                
+                                // Limpiar el input de archivo
+                                document.getElementById('doc-upload').value = '';
+                                
+                                setTimeout(() => {
+                                    addMessage('<div style="margin-top: 15px;">🔍 ¿Deseas realizar otra evaluación? Ingresa un nuevo número de documento (DNI, RUC o CE).</div>');
+                                }, 1000);
+                            }, 2000);
+                        }
+                    }, 1000);
+                } else {
+                    addMessage('<span style="color: red; font-weight: bold;">❌ Error: Por favor, sube un archivo en formato PDF.</span>');
+                }
+            }
+        }
+        
+        function updateCoins() {
+            document.getElementById('coins').textContent = coins;
+        }
+        
+        function deductCoins() {
+            let cost = 0;
+
+            if (selectedCategory === "Alquiler Propiedad") {
+                cost = 50;
+            } else if (selectedCategory === "Busqueda Cuidador(a)") {
+                cost = 30;
+            } else if (selectedCategory === "Busqueda Personal") {
+                cost = 20;
+            }
+
+            if (coins >= cost) {
+                coins -= cost;
+                updateCoins();
+                return true;
+            } else {
+                addMessage('<span style="color: red; font-weight: bold;">No tienes suficientes coins para realizar esta acción.</span>');
+                setTimeout(() => {
+                    currentStep = 'rubro';
+                    addMessage(`
+                        ¿Para qué rubro va dirigida la búsqueda? Por favor responde con el número correspondiente:<br>
+                        1. Alquiler Propiedad<br>
+                        2. Búsqueda Personal<br>
+                        3. Búsqueda Cuidador(a)<br>
+                    `);
+                }, 1000);
+                return false;
+            }
+        }
+
+        function validateDocument(doc) {
+            if (!/^\d+$/.test(doc)) {
+                return { valid: false, message: "¡El documento debe contener solo números! Por favor, ingresa un número de documento (DNI, RUC o CE) válido." };
+            }
+            if (doc.length === 8) return { valid: true, type: "DNI" };
+            if (doc.length === 11) return { valid: true, type: "RUC" };
+            if (doc.length === 12) return { valid: true, type: "CE" };
+            return { valid: false, message: "¡Longitud de documento inválida! Por favor, ingresa un número de documento (DNI, RUC o CE) válido." };
+        }
+
+        function getRandomScore() {
+            return Math.floor(Math.random() * 1001);
+        }
+
+        function getRandomName() {
+            const nombres = ["Juan", "María", "Carlos", "Ana", "Pedro", "Luis"];
+            const apellidos = ["García", "López", "Martínez", "Rodríguez", "Sánchez"];
+            return `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
+        }
+
+        function updateHistory(doc, type, category = '') {
+            const history = document.getElementById('history');
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <div>${type}: ${doc}</div>
+                ${category ? `<div>Rubro: ${category}</div>` : ''}
+                <small>Hace un momento</small>
+            `;
+            history.insertBefore(div, history.firstChild);
+        }
+
+        function updateDetails(doc, type, category) {
+            const details = document.getElementById('details-content');
+            details.innerHTML = `
+                <div class="detail-card">
+                    <h4>Verificaciones</h4>
+                    <div class="verification-badge verified">✓ RENIEC</div>
+                    <div class="verification-badge warning">⚠ SUNAT</div>
+                    <div class="verification-badge verified">✓ Antecedentes</div>
+                </div>
+                <div class="detail-card">
+                    <h4>Actividad Reciente</h4>
+                    <p>Última consulta: ${new Date().toLocaleString()}</p>
+                    <p>Tipo: ${type}</p>
+                    <p>Rubro: ${category}</p>
+                </div>
+            `;
+        }
+
+        function generateResponse(doc, type, category) {
+            const score = getRandomScore();
+            let categoryName, color;
+
+            if (score >= 750) {
+                categoryName = "PERFECTO";
+                color = "#008000";
+            } else if (score >= 500) {
+                categoryName = "BUENO";
+                color = "#90ee90";
+            } else if (score >= 250) {
+                categoryName = "MEDIO";
+                color = "#ffa500";
+            } else {
+                categoryName = "PÉSIMO";
+                color = "#ff0000";
+            }
+
+            return `
+                <div class="info-card">
+                    <div class="info-grid">
+                        <div>
+                            <small>Nombre:</small>
+                            <strong>${getRandomName()}</strong>
+                        </div>
+                        <div>
+                            <small>${type}:</small>
+                            <strong>${doc}</strong>
+                        </div>
+                        <div>
+                            <small>Rubro:</small>
+                            <strong>${category}</strong>
+                        </div>
+                    </div>
+
+                    <div class="score-section">
+                        <h3>Score General: </h3>
+                        <div class="score-category" style="background-color: ${color}20; color: ${color};">
+                            ${score} - ${categoryName}
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-pointer" style="left: ${(score/1000)*100}%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                            <span>0</span>
+                            <span>250</span>
+                            <span>500</span>
+                            <span>750</span>
+                            <span>1000</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="GetInformePdf.pdf" target="_blank" style="
+                            display: inline-block;
+                            padding: 10px 20px;
+                            background-color: #007BFF;
+                            color: #fff;
+                            text-decoration: none;
+                            border-radius: 5px;
+                            font-weight: bold;
+                        ">
+                            📥 Descargar Informe Completo
+                        </a>
+                        <p style="margin-top: 10px; font-size: 14px; color: #555;">
+                            Haz clic en el botón para abrir el informe detallado de tu búsqueda.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function handleSubmit() {
+            const input = document.getElementById('user-input');
+            const userInput = input.value.trim();
+
+            if (!userInput) return;
+
+            addMessage(userInput, true);
+            input.value = '';
+
+            if (currentStep === 'dni') {
+                const validation = validateDocument(userInput);
+
+                if (validation.valid) {
+                    selectedDoc = userInput;
+                    selectedType = validation.type;
+                    currentStep = 'rubro';
+                    setTimeout(() => {
+                        addMessage(`
+                            ¿Para qué rubro va dirigida la búsqueda? Por favor responde con el número correspondiente:<br>
+                            1. Alquiler Propiedad<br>
+                            2. Búsqueda Personal<br>
+                            3. Búsqueda Cuidador(a)<br>
+                        `);
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        addMessage(validation.message);
+                    }, 500);
+                }
+            } else if (currentStep === 'rubro') {
+                const categoryNum = parseInt(userInput, 10);
+                if (categoryNum >= 1 && categoryNum <= 3) {
+                    selectedCategory = categories[categoryNum];
+                    addMessage(`<span style="color: green; font-weight: bold;">Rubro seleccionado: ${selectedCategory}</span>`);
+                    currentStep = 'consent';
+                    setTimeout(() => {
+                        addMessage(`¿La persona a evaluar acepta el tratamiento de datos por parte de Sabueso Digital? Responde con "Sí" para continuar.`);
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        addMessage("Por favor, ingresa un número válido entre 1 y 3 para seleccionar el rubro.");
+                    }, 600);
+                }
+            } else if (currentStep === 'consent') {
+                if (userInput.toLowerCase() === 'sí' || userInput.toLowerCase() === 'si') {
+                    addMessage('<span style="color: green; font-weight: bold;">Consentimiento otorgado.</span>');
+                    currentStep = 'upload';
+                    
+                    // Limpiar el input de archivo antes de mostrar el botón de carga
+                    document.getElementById('doc-upload').value = '';
+                    documentUploaded = false;
+                    
+                    setTimeout(() => {
+                        addMessage(`
+                            <div style="margin: 10px 0;">
+                                Por favor, sube la documentación de la persona en formato PDF:
+                                <div style="margin-top: 10px;">
+                                    <button onclick="document.getElementById('doc-upload').click()" style="
+                                        background-color: #4CAF50;
+                                        color: white;
+                                        padding: 10px 20px;
+                                        border: none;
+                                        border-radius: 5px;
+                                        cursor: pointer;
+                                    ">
+                                        📎 Subir Documento
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    }, 500);
+                } else {
+                    addMessage('<span style="color: red; font-weight: bold;">Debes aceptar el tratamiento de datos para continuar.</span>');
+                }
+            }
+        }
+
+        // Agregar evento Enter al input
+        document.getElementById('user-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSubmit();
+        });
+    </script>
+</body>
+</html>

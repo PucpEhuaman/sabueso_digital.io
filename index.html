@@ -3,270 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sabueso Digital</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Login - Sabueso Digital</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header img {
+            width: 150px;
+            margin-bottom: 1rem;
+        }
+
+        .login-header h1 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            color: #333;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .login-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.8rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .login-button:hover {
+            background: #0056b3;
+        }
+
+        .error-message {
+            color: #dc3545;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <h3>Historial</h3>
-            <div id="history"></div>
+    <div class="login-container">
+        <div class="login-header">
+            <img src="sabueso.png" alt="Sabueso Digital Logo">
+            <h1>Sabueso Digital</h1>
+            <p>Inicia sesión para continuar</p>
         </div>
 
-        <div class="main-chat">
-            <div class="chat-header">
-			<h2>
-				<img src="sabueso.png" alt="Logo Sabueso" style="height: 40px; vertical-align: middle; margin-right: 10px;">
-				Sabueso Digital
-			</h2>
-			<p>Asistente Virtual</p>
-		</div>
-
-            <div class="chat-messages" id="chat-messages">
-                <div class="message bot-message">
-                    ¡Hola! Soy el asistente de Sabueso Digital. Ingresa un número de documento (DNI, RUC o CE) para verificar.
-                </div>
+        <form class="login-form" onsubmit="return handleLogin(event)">
+            <div class="form-group">
+                <label for="email">Correo electrónico</label>
+                <input type="email" id="email" required>
             </div>
 
-            <div class="chat-input">
-                <input type="text" id="user-input" placeholder="Ingresa el número de documento...">
-                <button onclick="handleSubmit()">Enviar</button>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" required>
             </div>
-        </div>
 
-        <div class="details">
-            <h3>Detalles</h3>
-            <div id="details-content"></div>
-        </div>
+            <button type="submit" class="login-button">Iniciar sesión</button>
+            
+            <div id="error-message" class="error-message">
+                Correo electrónico o contraseña incorrectos
+            </div>
+        </form>
     </div>
 
     <script>
-        // Variables para gestionar el flujo
-        let currentStep = 'dni'; // Estados: 'dni', 'rubro', 'payment'
-        let selectedDoc = '';
-        let selectedType = '';
-        let selectedCategory = '';
+        function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('error-message');
 
-        // Mapeo de categorías
-        const categories = {
-            1: "Alquiler Vivienda",
-            2: "Alquiler de local comercial",
-            3: "Agencia de seguridad",
-            4: "Persona que otorgará servicios",
-            5: "Contrata de Personal",
-            6: "Otros"
-        };
+    // Simulamos credenciales válidas
+    const validEmail = 'usuario@example.com';
+    const validPassword = '123456';
 
-        function addMessage(content, isUser = false) {
-            const messages = document.getElementById('chat-messages');
-            const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-            div.innerHTML = content;
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
-        }
+    if (true) {
+        // Guardamos tanto el email como el nombre del usuario
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('userName', 'Juan Pérez');
+        // Redirigimos a chat.html
+        window.location.href = 'chat.html';
+    } else {
+        errorMessage.style.display = 'block';
+        setTimeout(() => {
+            errorMessage.style.display = 'none';
+        }, 3000);
+    }
 
-        function validateDocument(doc) {
-            if (!/^\d+$/.test(doc)) {
-                return { valid: false, message: "¡El documento debe contener solo números! Por favor, ingresa un número de documento (DNI, RUC o CE) válido." };
-            }
-            if (doc.length === 8) return { valid: true, type: "DNI" };
-            if (doc.length === 11) return { valid: true, type: "RUC" };
-            if (doc.length === 12) return { valid: true, type: "CE" };
-            return { valid: false, message: "¡Longitud de documento inválida! Por favor, ingresa un número de documento (DNI, RUC o CE) válido." };
-        }
-
-        function getRandomScore() {
-            return Math.floor(Math.random() * 1001);
-        }
-
-        function getRandomName() {
-            const nombres = ["Juan", "María", "Carlos", "Ana", "Pedro", "Luis"];
-            const apellidos = ["García", "López", "Martínez", "Rodríguez", "Sánchez"];
-            return `${nombres[Math.floor(Math.random() * nombres.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]} ${apellidos[Math.floor(Math.random() * apellidos.length)]}`;
-        }
-
-        function updateHistory(doc, type, category = '') {
-            const history = document.getElementById('history');
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `
-                <div>${type}: ${doc}</div>
-                ${category ? `<div>Rubro: ${category}</div>` : ''}
-                <small>Hace un momento</small>
-            `;
-            history.insertBefore(div, history.firstChild);
-        }
-
-        function updateDetails(doc, type, category) {
-            const details = document.getElementById('details-content');
-            details.innerHTML = `
-                <div class="detail-card">
-                    <h4>Verificaciones</h4>
-                    <div class="verification-badge verified">✓ RENIEC</div>
-                    <div class="verification-badge warning">⚠ SUNAT</div>
-                    <div class="verification-badge verified">✓ Antecedentes</div>
-                </div>
-                <div class="detail-card">
-                    <h4>Actividad Reciente</h4>
-                    <p>Última consulta: ${new Date().toLocaleString()}</p>
-                    <p>Tipo: ${type}</p>
-                    <p>Rubro: ${category}</p>
-                </div>
-            `;
-        }
-
-        function generateResponse(doc, type, category) {
-            const score = getRandomScore();
-            let categoryName, color;
-
-            if (score >= 750) {
-                categoryName = "PERFECTO";
-                color = "#008000";
-            } else if (score >= 500) {
-                categoryName = "BUENO";
-                color = "#90ee90";
-            } else if (score >= 250) {
-                categoryName = "MEDIO";
-                color = "#ffa500";
-            } else {
-                categoryName = "PÉSIMO";
-                color = "#ff0000";
-            }
-
-            return `
-                <div class="info-card">
-                    <div class="info-grid">
-                        <div>
-                            <small>Nombre:</small>
-                            <strong>${getRandomName()}</strong>
-                        </div>
-                        <div>
-                            <small>${type}:</small>
-                            <strong>${doc}</strong>
-                        </div>
-                        <div>
-                            <small>Rubro:</small>
-                            <strong>${category}</strong>
-                        </div>
-                    </div>
-
-                    <div class="score-section">
-                        <h3>Score General: </h3>
-                        <div class="score-category" style="background-color: ${color}20; color: ${color};">
-                            ${score} - ${categoryName}
-                        </div>
-                        <div class="score-bar">
-                            <div class="score-pointer" style="left: ${(score/1000)*100}%"></div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                            <span>0</span>
-                            <span>250</span>
-                            <span>500</span>
-                            <span>750</span>
-                            <span>1000</span>
-                        </div>
-                    </div>
-
-                    <!-- Enlace para descargar el informe PDF -->
-                    <div style="margin-top: 20px; text-align: center;">
-                        <a href="GetInformePdf.pdf" target="_blank" style="
-                            display: inline-block;
-                            padding: 10px 20px;
-                            background-color: #007BFF;
-                            color: #fff;
-                            text-decoration: none;
-                            border-radius: 5px;
-                            font-weight: bold;
-                        ">
-                            📥 Descargar Informe Completo
-                        </a>
-                        <p style="margin-top: 10px; font-size: 14px; color: #555;">
-                            Haz clic en el botón para abrir el informe detallado de tu búsqueda.
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
-
-        function requestPayment() {
-            return new Promise((resolve) => {
-                // Mostrar el código QR para el pago
-                const messages = document.getElementById('chat-messages');
-                const paymentDiv = document.createElement('div');
-                paymentDiv.className = 'message bot-message';
-                paymentDiv.innerHTML = `
-                    Por favor, realiza el pago escaneando el siguiente código QR para continuar.<br>
-                    <img src="QR.png" alt="Código QR" class="qr-image" style="display: block; margin: 10px auto;">
-                `;
-                messages.appendChild(paymentDiv);
-                messages.scrollTop = messages.scrollHeight;
-
-                // Simular una espera para la confirmación del pago (por ejemplo, 5 segundos)
-                setTimeout(() => {
-                    resolve();
-                }, 5000);
-            });
-        }
-
-        async function handleSubmit() {
-            const input = document.getElementById('user-input');
-            const userInput = input.value.trim();
-
-            if (!userInput) return;
-
-            addMessage(userInput, true);
-            input.value = '';
-
-            if (currentStep === 'dni') {
-                const validation = validateDocument(userInput);
-
-                if (validation.valid) {
-                    selectedDoc = userInput;
-                    selectedType = validation.type;
-                    currentStep = 'rubro';
-                    setTimeout(() => {
-                        addMessage(`
-                            ¿Para qué rubro va dirigida la búsqueda? Por favor responde con el número correspondiente:<br>
-                            1. Alquiler Vivienda<br>
-                            2. Alquiler de local comercial<br>
-                            3. Agencia de seguridad<br>
-                            4. Persona que otorgará servicios<br>
-                            5. Contrata de Personal<br>
-                            6. Otros.
-                        `);
-                    }, 500);
-                } else {
-                    setTimeout(() => {
-                        addMessage(validation.message);
-                    }, 500);
-                }
-            } else if (currentStep === 'rubro') {
-                const categoryNum = parseInt(userInput, 10);
-                if (categoryNum >= 1 && categoryNum <= 6) {
-                    selectedCategory = categories[categoryNum];
-                    currentStep = 'payment';
-                    addMessage(`<span style="color: green; font-weight: bold;">Rubro seleccionado: ${selectedCategory}</span>`);
-                    await requestPayment();
-                    addMessage('<span style="color: green; font-weight: bold;">Gracias por tu pago, continuaremos con la búsqueda...</span>');
-                    // Simular una espera antes de mostrar la respuesta
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    addMessage(generateResponse(selectedDoc, selectedType, selectedCategory));
-                    updateHistory(selectedDoc, selectedType, selectedCategory);
-                    updateDetails(selectedDoc, selectedType, selectedCategory);
-                    currentStep = 'dni'; // Reiniciar el flujo para futuras consultas
-                } else {
-                    setTimeout(() => {
-                        addMessage("Por favor, ingresa un número válido entre 1 y 6 para seleccionar el rubro.");
-                    }, 500);
-                }
-            }
-        }
-
-        // Agregar evento Enter al input
-        document.getElementById('user-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSubmit();
-        });
+    return false;
+}
     </script>
 </body>
 </html>

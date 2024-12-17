@@ -38,12 +38,6 @@ body {
     max-height: 90vh;
 }
 
-.chat-header {
-    padding: 20px;
-    background: #1e3a8a;
-    color: white;
-}
-
 .chat-messages {
     flex: 1;
     padding: 20px;
@@ -201,4 +195,57 @@ h3 {
     width: 150px;
     height: 150px;
     margin-top: 10px;
+}
+.chat-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1rem;
+	background: #f8f9fa;
+	border-bottom: 1px solid #dee2e6;
+}
+
+.user-info {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.user-email {
+	font-size: 0.9rem;
+	color: #666;
+}
+
+.logout-button {
+	background-color: #dc3545;
+	color: white;
+	border: none;
+	padding: 8px 16px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.9rem;
+	transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+	background-color: #c82333;
+}
+
+.header-content {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+}
+
+.header-left {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+}
+
+.header-right {
+	display: flex;
+	align-items: center;
+	gap: 20px;
 }
